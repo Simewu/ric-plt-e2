@@ -33,7 +33,7 @@ RUN mkdir -p /opt/e2/RIC-E2-TERMINATION/ \
     && mkdir -p /opt/e2/RIC-E2-TERMINATION/3rdparty
 
 COPY RIC-E2-TERMINATION/ /opt/e2/RIC-E2-TERMINATION/
-COPY CMakeLists.txt /opt/e2/CMakeLists.txt
+COPY RIC-E2-TERMINATION/CMakeLists.txt /opt/e2/CMakeLists.txt
 RUN apt-get install -y libgtest-dev
 RUN cd /usr/src/gtest && cmake CMakeLists.txt && make && cp lib/*.a /usr/lib
 RUN apt-get install -y google-mock
