@@ -1273,8 +1273,13 @@ void handlepoll_error(struct epoll_event &event,
                       sctp_params_t *params) {
     if ((event.data.fd != params->rmrListenFd) && (event.data.ptr != nullptr)) {
         auto *peerInfo = (ConnectedCU_t *)event.data.ptr;
-        mdclog_write(MDCLOG_ERR, "epoll error, events %0x on fd %d, RAN NAME : %s",
-                     event.events, peerInfo->fileDescriptor, peerInfo->enodbName);
+        int socket_error = 0;
+        socklen_t error_len = sizeof(socket_error);
+        if (getsockopt(peerInfo->fileDescriptor, SOL_SOCKET, SO_ERROR, &socket_error, &error_len) == 0 && socket_error != 0) {
+            mdclog_write(MDCLOG_ERR, "epoll error, events 0x%0x on fd %d, RAN NAME: %s, socket error: %s (%d)", event.events, peerInfo->fileDescriptor, peerInfo->enodbName, strerror(socket_error), socket_error);
+        } else {
+            mdclog_write(MDCLOG_ERR, "epoll error, events 0x%0x on fd %d, RAN NAME: %s (EPOLLERR=%s, EPOLLHUP=%s)", event.events, peerInfo->fileDescriptor, peerInfo->enodbName, (event.events & EPOLLERR) ? "YES" : "NO", (event.events & EPOLLHUP) ? "YES" : "NO");
+        }
 #if !(defined(UNIT_TEST) || defined(MODULE_TEST))
         rmrMessageBuffer.sendMessage->len = snprintf((char *)rmrMessageBuffer.sendMessage->payload, 256,
                                                      "%s|Failed SCTP Connection",
