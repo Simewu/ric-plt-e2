@@ -40,7 +40,7 @@ RUN cd /usr/src/googletest/googlemock  && cmake CMakeLists.txt && make && cp lib
 RUN cp -rf /usr/src/googletest/googlemock/include/gmock /usr/include/
  
 RUN apt-get install -y libboost-all-dev
-RUN mv /opt/e2/RIC-E2-TERMINATION/CMakeLists.txt /opt/e2/ && cat /opt/e2/RIC-E2-TERMINATION/config/config.conf \
+RUN if [ -f /opt/e2/RIC-E2-TERMINATION/CMakeLists.txt ]; then mv /opt/e2/RIC-E2-TERMINATION/CMakeLists.txt /opt/e2/; fi && cat /opt/e2/RIC-E2-TERMINATION/config/config.conf \
     && wget --content-disposition https://github.com/cgreen-devs/cgreen/releases/download/1.2.0/cgreen_1.2.0_amd64.deb \
     && dpkg -i cgreen_1.2.0_amd64.deb \
     && wget --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr_4.9.4_amd64.deb/download.deb \
