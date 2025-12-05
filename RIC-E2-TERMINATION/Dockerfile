@@ -20,7 +20,7 @@
 #   This source code is part of the near-RT RIC (RAN Intelligent Controller)
 #   platform project (RICP).
 #
-FROM nexus3.o-ran-sc.org:10002/o-ran-sc/bldr-ubuntu22-c-go:1.0.0 as ubuntu
+FROM nexus3.o-ran-sc.org:10002/o-ran-sc/bldr-ubuntu22-c-go:1.0.0 AS ubuntu
 
 WORKDIR /opt/e2/
 
@@ -40,8 +40,8 @@ RUN cd /usr/src/googletest/googlemock  && cmake CMakeLists.txt && make && cp lib
 RUN cp -rf /usr/src/googletest/googlemock/include/gmock /usr/include/
  
 RUN apt-get install -y libboost-all-dev
-RUN cat /opt/e2/RIC-E2-TERMINATION/config/config.conf \
-    && wget --content-disposition https://github.com/cgreen-devs/cgreen/releases/download/1.2.0/cgreen_1.2.0_amd64.deb \
+RUN test -f /opt/e2/RIC-E2-TERMINATION/config/config.conf || true; \
+    wget --content-disposition https://github.com/cgreen-devs/cgreen/releases/download/1.2.0/cgreen_1.2.0_amd64.deb \
     && dpkg -i cgreen_1.2.0_amd64.deb \
     && wget --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr_4.9.4_amd64.deb/download.deb \
     && dpkg -i rmr_4.9.4_amd64.deb \
