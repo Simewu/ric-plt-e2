@@ -33,6 +33,7 @@ RUN mkdir -p /opt/e2/RIC-E2-TERMINATION/ \
     && mkdir -p /opt/e2/RIC-E2-TERMINATION/3rdparty
 
 COPY RIC-E2-TERMINATION/ /opt/e2/RIC-E2-TERMINATION/
+COPY CMakeLists.txt /opt/e2/CMakeLists.txt
 RUN apt-get install -y libgtest-dev
 RUN cd /usr/src/gtest && cmake CMakeLists.txt && make && cp lib/*.a /usr/lib
 RUN apt-get install -y google-mock
@@ -67,7 +68,6 @@ RUN test -f /opt/e2/RIC-E2-TERMINATION/config/config.conf || true; \
     && cd /opt/e2/RIC-E2-TERMINATION/3rdparty && git clone https://github.com/Tencent/rapidjson.git \
     && cd /opt/e2/RIC-E2-TERMINATION/3rdparty && git clone https://github.com/zeux/pugixml.git \
     && cd /opt/e2/ && git clone https://github.com/bilke/cmake-modules.git \
-    && ls -la /opt/e2/RIC-E2-TERMINATION/*.cpp | head -5 \
     && cd /opt/e2/ && /usr/bin/cmake -D CMAKE_BUILD_TYPE=$BUILD_TYPE . && make \
     && echo "3" > /opt/e2/rmr.verbose
 
