@@ -1273,6 +1273,7 @@ void handlepoll_error(struct epoll_event &event,
                       sctp_params_t *params) {
     if ((event.data.fd != params->rmrListenFd) && (event.data.ptr != nullptr)) {
         auto *peerInfo = (ConnectedCU_t *)event.data.ptr;
+        mdclog_write(MDCLOG_INFO, "Connection state at error: RAN=%s, isConnected=%s, gotSetup=%s, asnLength=%zu", peerInfo->enodbName, peerInfo->isConnected ? "true" : "false", peerInfo->gotSetup ? "true" : "false", peerInfo->asnLength);
         int socket_error = 0;
         socklen_t error_len = sizeof(socket_error);
         if (getsockopt(peerInfo->fileDescriptor, SOL_SOCKET, SO_ERROR, &socket_error, &error_len) == 0 && socket_error != 0) {
@@ -1298,6 +1299,13 @@ void handlepoll_error(struct epoll_event &event,
         }
         if (sendRequestToXapp(message, RIC_SCTP_CONNECTION_FAILURE, rmrMessageBuffer) != 0) {
             mdclog_write(MDCLOG_ERR, "SCTP_CONNECTION_FAIL message failed to send to xAPP");
+        }
+        struct sctp_status sctp_stat;
+        socklen_t stat_len = sizeof(sctp_stat);
+        if (getsockopt(peerInfo->fileDescriptor, SOL_SCTP, SCTP_STATUS, &sctp_stat, &stat_len) == 0) {
+            mdclog_write(MDCLOG_INFO, "SCTP status at disconnect: assoc_id=%d, state=%d, instrms=%d, outstrms=%d, RAN=%s", sctp_stat.sstat_assoc_id, sctp_stat.sstat_state, sctp_stat.sstat_instrms, sctp_stat.sstat_outstrms, peerInfo->enodbName);
+        } else {
+            mdclog_write(MDCLOG_WARN, "Failed to get SCTP status at disconnect for %s: %s", peerInfo->enodbName, strerror(errno));
         }
 #endif
         close(peerInfo->fileDescriptor);
@@ -1836,6 +1844,7 @@ static void buildAndSendSetupRequest(ReportingMessages_t &message,
     message.peerInfo->gotSetup = true;
     buildJsonMessage(message);
 
+    mdclog_write(MDCLOG_INFO, "E2 Setup Request successfully sent to E2Manager for RAN: %s, messageType: %d", message.message.enodbName, message.message.messageType);
     if (rmrMsg != nullptr) {
         rmr_free_msg(rmrMsg);
     }
@@ -2252,11 +2261,11 @@ void asnInitiatingRequest(E2AP_PDU_t *pdu,
 
             if (transactionID < numberZero)
             {
-                mdclog_write(MDCLOG_ERR, "Invalid TransactionID or GnbIb");
+                mdclog_write(MDCLOG_ERR, "Invalid TransactionID or GnbId for RAN: %s", message.message.enodbName);
                 break;
             }
 
-            mdclog_write(MDCLOG_DEBUG, "Calling handleE2SetupReq");
+            mdclog_write(MDCLOG_INFO, "Processing E2 Setup Request: RAN=%s, transactionID=%ld, streamId=%d", message.message.enodbName, transactionID, streamId);
             handleE2SetupReq(message, rmrMessageBuffer, pdu, transactionID, streamId, sctpMap);
             break;
         }
@@ -3380,7 +3389,9 @@ int receiveXappMessages(Sctp_Map_t *sctpMap,
             if (loglevel >= MDCLOG_DEBUG) {
                 mdclog_write(MDCLOG_DEBUG, "RIC_E2_SETUP_RESP");
             }
+            mdclog_write(MDCLOG_INFO, "Received E2 Setup Response from E2Manager for RAN: %s, converting XML to PER", message.message.enodbName);
             if (PER_FromXML(message, rmrMessageBuffer) != numberZero) {
+                mdclog_write(MDCLOG_ERR, "Failed to convert E2 Setup Response from XML to PER for RAN: %s", message.message.enodbName);
                 break;
             }
 #if !(defined(UNIT_TEST) || defined(MODULE_TEST))
@@ -3391,11 +3402,12 @@ int receiveXappMessages(Sctp_Map_t *sctpMap,
             message.peerInfo->sctpParams->e2tCounters[OUT_SUCC][MSG_COUNTER][ProcedureCode_id_E2setup]->Increment();
             message.peerInfo->sctpParams->e2tCounters[OUT_SUCC][BYTES_COUNTER][ProcedureCode_id_E2setup]->Increment(rmrMessageBuffer.rcvMessage->len);
 #endif
+            mdclog_write(MDCLOG_INFO, "Sending E2 Setup Response to gNB: %s via SCTP", message.message.enodbName);
             if (sendDirectionalSctpMsg(rmrMessageBuffer, message, numberZero, sctpMap) != numberZero) {
-                mdclog_write(MDCLOG_ERR, "Failed to send RIC_E2_SETUP_RESP");
+                mdclog_write(MDCLOG_ERR, "Failed to send RIC_E2_SETUP_RESP to gNB: %s", message.message.enodbName);
                 return negativeSix;
             }
-            mdclog_write(MDCLOG_DEBUG, "Successfully Sent E2_SETUP_RESP to E2Node");
+            mdclog_write(MDCLOG_INFO, "Successfully sent E2 Setup Response to gNB: %s", message.message.enodbName);
             setE2ProcedureOngoingStatus(message.message.enodbName, E2_SETUP_PROCEDURE_COMPLETED);
             break;
         }
