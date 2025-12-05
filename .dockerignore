@@ -1,0 +1,49 @@
+# Git and VCS
+.git
+.gitignore
+.gitattributes
+
+# GitHub
+.github/ISSUE_TEMPLATE
+.github/PULL_REQUEST_TEMPLATE
+.github/*.md
+
+# Documentation
+docs/
+*.md
+README.md
+LICENSE*
+LICENSES.txt
+
+# IDEs and Editors
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# Build artifacts
+# build/
+# CMakeFiles/
+
+# Node modules
+node_modules
+npm-debug.log
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+
+# CI/CD
+.travis.yml
+.circleci
+azure-pipelines.yml
+
+# Temp files
+*.tmp
+*.log
+*.bak
+*.swp

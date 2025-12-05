@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  e2-terminator:
+    build:
+      context: .
+      dockerfile: RIC-E2-TERMINATION/Dockerfile
+      args:
+        BUILD_TYPE: Release
+    container_name: e2-terminator
+    hostname: e2term
+    ports:
+      - "38000:38000"
+    environment:
+      RMR_SEED_RT: dockerRouter.txt
+      LD_LIBRARY_PATH: /usr/local/lib
+      E2TERM_POD_NAME: e2term
+      TZ: Asia/Kolkata
+    volumes:
+      - ./RIC-E2-TERMINATION/config/config.conf:/opt/e2/config/config.conf:ro
+      - ./RIC-E2-TERMINATION/dockerRouter.txt:/opt/e2/dockerRouter.txt:ro
+    networks:
+      - e2-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/e2/rmr_probe", "localhost:38000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  e2-network:
+    driver: bridge
